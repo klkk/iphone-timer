@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计时器 - iPhone风格</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- SF Pro Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sf-pro': ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        'iphone-green': '#34C759',
+                        'iphone-red': '#FF3B30',
+                        'iphone-orange': '#FF9500',
+                        'iphone-blue': '#007AFF',
+                        'iphone-gray': '#8E8E93',
+                        'iphone-bg': '#000000',
+                        'iphone-surface': '#1C1C1E',
+                        'iphone-surface-light': '#F2F2F7',
+                    },
+                    animation: {
+                        'pulse-ring': 'pulseRing 1.5s ease-out infinite',
+                        'shake': 'shake 0.5s ease-in-out',
+                        'fade-in': 'fadeIn 0.3s ease-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'bounce-in': 'bounceIn 0.6s ease-out',
+                    },
+                    keyframes: {
+                        pulseRing: {
+                            '0%': { transform: 'scale(1)', opacity: '1' },
+                            '100%': { transform: 'scale(1.2)', opacity: '0' },
+                        },
+                        shake: {
+                            '0%, 100%': { transform: 'translateX(0)' },
+                            '10%, 30%, 50%, 70%, 90%': { transform: 'translateX(-2px)' },
+                            '20%, 40%, 60%, 80%': { transform: 'translateX(2px)' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        bounceIn: {
+                            '0%': { transform: 'scale(0.3)', opacity: '0' },
+                            '50%': { transform: 'scale(1.05)' },
+                            '70%': { transform: 'scale(0.9)' },
+                            '100%': { transform: 'scale(1)', opacity: '1' },
+                        },
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* 时间选择器样式 */
+        .time-picker {
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.02em;
+        }
+        
+        /* 滚动容器 */
+        .picker-container {
+            height: 128px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .picker-scroll {
+            height: 100%;
+            overflow-y: auto;
+            scroll-snap-type: y mandatory;
+            scroll-behavior: smooth;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        .picker-scroll::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .picker-item {
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            scroll-snap-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        .picker-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .picker-item.selected {
+            font-size: 1.875rem;
+            color: #007AFF;
+            font-weight: 500;
+        }
+        
+        /* 选中指示器 */
+        .picker-indicator {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 64px;
+            transform: translateY(-50%);
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .picker-indicator::before,
+        .picker-indicator::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .picker-indicator::before {
+            top: 0;
+        }
+        
+        .picker-indicator::after {
+            bottom: 0;
+        }
+        
+        /* 渐变遮罩 */
+        .picker-mask {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 64px;
+            pointer-events: none;
+            z-index: 5;
+        }
+        
+        .picker-mask-top {
+            top: 0;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+        }
+        
+        .picker-mask-bottom {
+            bottom: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+        }
+        
+        /* 按钮效果 */
+        .btn-press:active {
+            transform: scale(0.95);
+        }
+        
+        /* 玻璃效果 */
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        
+        /* 毛玻璃背景 */
+        .frosted-bg {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+        }
+        
+        /* 倒计时圆环 */
+        .progress-ring {
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+        
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.1s linear;
+        }
+        
+        /* 完成动画 */
+        @keyframes alarmPulse {
+            0%, 100% { 
+                background-color: rgba(255, 59, 48, 0.3);
+                transform: scale(1);
+            }
+            50% { 
+                background-color: rgba(255, 59, 48, 0.6);
+                transform: scale(1.02);
+            }
+        }
+        
+        .alarm-active {
+            animation: alarmPulse 1s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-iphone-bg dark:bg-iphone-surface-light text-white min-h-screen transition-colors duration-300">
+    
+    <!-- 状态栏 -->
+    <div class="fixed top-0 left-0 right-0 z-50 px-6 py-2 flex justify-between items-center text-xs">
+        <span id="currentTime" class="font-medium">9:41</span>
+        <div class="flex items-center gap-1">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M2 17h20v2H2v-2zm1.15-4.05L4 11.47l.85 1.48 1.3-.75-.85-1.48H7v-1.5H5.3l.85-1.48L4.85 7 4 8.47 3.15 7l-1.3.75.85 1.48H1v1.5h1.7l-.85 1.48 1.3.75zm6.7-.75l1.48.85 1.48-.85-.85-1.48H14v-1.5h-2.05l.85-1.48L11.33 7 9.85 8.47 8.37 7l-1.48.85.85 1.48H6v1.5h1.7l-.85 1.48zm8 0l1.48.85 1.48-.85-.85-1.48H22v-1.5h-2.05l.85-1.48L19.33 7l-1.48 1.47L16.37 7l-1.48.85.85 1.48H14v1.5h1.7l-.85 1.48z"/>
+            </svg>
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M1 9l2-2v8a2 2 0 002 2h14a2 2 0 002-2V7l2 2V7l-3-3-3 3v2l2-2v8H3V7l2 2V7L2 4 1 7v2z"/>
+            </svg>
+            <svg class="w-6 h-4" viewBox="0 0 30 20" fill="currentColor">
+                <rect x="1" y="6" width="4" height="8" rx="1"/>
+                <rect x="7" y="3" width="4" height="11" rx="1"/>
+                <rect x="13" y="8" width="4" height="6" rx="1"/>
+                <rect x="19" y="2" width="4" height="12" rx="1"/>
+                <rect x="25" y="5" width="4" height="9" rx="1"/>
+            </svg>
+        </div>
+    </div>
+
+    <!-- 主容器 -->
+    <main class="pt-12 pb-20 min-h-screen flex flex-col">
+        
+        <!-- 标题栏 -->
+        <header class="px-6 py-4">
+            <h1 class="text-3xl font-thin text-center">计时器</h1>
+        </header>
+
+        <!-- 计时器内容 -->
+        <section class="flex-1 flex flex-col items-center justify-center px-6">
+            
+            <!-- 时间设置区域 -->
+            <div id="timeSetup" class="w-full max-w-md">
+                <!-- 预设时间按钮 -->
+                <div class="grid grid-cols-4 gap-3 mb-8">
+                    <button onclick="setPresetTime(0, 1, 0)" class="glass-effect rounded-2xl py-4 text-center hover:bg-white/20 transition-all btn-press">
+                        <div class="text-2xl mb-1">1分</div>
+                    </button>
+                    <button onclick="setPresetTime(0, 5, 0)" class="glass-effect rounded-2xl py-4 text-center hover:bg-white/20 transition-all btn-press">
+                        <div class="text-2xl mb-1">5分</div>
+                    </button>
+                    <button onclick="setPresetTime(0, 10, 0)" class="glass-effect rounded-2xl py-4 text-center hover:bg-white/20 transition-all btn-press">
+                        <div class="text-2xl mb-1">10分</div>
+                    </button>
+                    <button onclick="setPresetTime(0, 15, 0)" class="glass-effect rounded-2xl py-4 text-center hover:bg-white/20 transition-all btn-press">
+                        <div class="text-2xl mb-1">15分</div>
+                    </button>
+                    <button onclick="setPresetTime(0, 30, 0)" class="glass-effect rounded-2xl py-4 text-center hover:bg-white/20 transition-all btn-press">
+                        <div class="text-2xl mb-1">30分</div>
+                    </button>
+                    <button onclick="setPresetTime(0, 45, 0)" class="glass-effect rounded-2xl py-4 text-center hover:bg-white/20 transition-all btn-press">
+                        <div class="text-2xl mb-1">45分</div>
+                    </button>
+                    <button onclick="setPresetTime(1, 0, 0)" class="glass-effect rounded-2xl py-4 text-center hover:bg-white/20 transition-all btn-press">
+                        <div class="text-2xl mb-1">1时</div>
+                    </button>
+                    <button onclick="setPresetTime(2, 0, 0)" class="glass-effect rounded-2xl py-4 text-center hover:bg-white/20 transition-all btn-press">
+                        <div class="text-2xl mb-1">2时</div>
+                    </button>
+                </div>
+
+                <!-- 时间选择器 -->
+                <div class="glass-effect rounded-3xl p-6 mb-8">
+                    <div class="flex justify-center items-center gap-4">
+                        <!-- 小时选择 -->
+                        <div class="flex flex-col items-center">
+                            <div class="picker-container">
+                                <div class="picker-mask picker-mask-top"></div>
+                                <div class="picker-mask picker-mask-bottom"></div>
+                                <div class="picker-indicator"></div>
+                                <div id="hoursPicker" class="picker-scroll">
+                                    <!-- 小时选项将动态生成 -->
+                                </div>
+                            </div>
+                            <div class="text-sm text-iphone-gray mt-2">小时</div>
+                        </div>
+
+                        <div class="text-4xl font-thin">:</div>
+
+                        <!-- 分钟选择 -->
+                        <div class="flex flex-col items-center">
+                            <div class="picker-container">
+                                <div class="picker-mask picker-mask-top"></div>
+                                <div class="picker-mask picker-mask-bottom"></div>
+                                <div class="picker-indicator"></div>
+                                <div id="minutesPicker" class="picker-scroll">
+                                    <!-- 分钟选项将动态生成 -->
+                                </div>
+                            </div>
+                            <div class="text-sm text-iphone-gray mt-2">分钟</div>
+                        </div>
+
+                        <div class="text-4xl font-thin">:</div>
+
+                        <!-- 秒选择 -->
+                        <div class="flex flex-col items-center">
+                            <div class="picker-container">
+                                <div class="picker-mask picker-mask-top"></div>
+                                <div class="picker-mask picker-mask-bottom"></div>
+                                <div class="picker-indicator"></div>
+                                <div id="secondsPicker" class="picker-scroll">
+                                    <!-- 秒选项将动态生成 -->
+                                </div>
+                            </div>
+                            <div class="text-sm text-iphone-gray mt-2">秒</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 开始按钮 -->
+                <button id="startTimerBtn" onclick="startTimer()" 
+                    class="w-full py-5 bg-iphone-green rounded-full text-2xl font-medium transition-all duration-200 hover:scale-105 btn-press shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled>
+                    开始
+                </button>
+            </div>
+
+            <!-- 倒计时显示区域 -->
+            <div id="timerDisplay" class="hidden w-full max-w-md">
+                <!-- 进度环 -->
+                <div class="relative mb-12">
+                    <svg class="w-64 h-64 mx-auto">
+                        <circle cx="128" cy="128" r="120" stroke="rgba(255,255,255,0.1)" stroke-width="8" fill="none"/>
+                        <circle id="progressRing" class="progress-ring-circle" cx="128" cy="128" r="120" 
+                            stroke="url(#gradient)" stroke-width="8" fill="none"
+                            stroke-dasharray="754" stroke-dashoffset="754"/>
+                        <defs>
+                            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#34C759;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#30D158;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    
+                    <!-- 时间显示 -->
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <div class="time-picker text-6xl lg:text-7xl font-thin text-center">
+                            <span id="displayHours">00</span><span class="inline-block w-4">:</span><span id="displayMinutes">00</span><span class="inline-block w-4">:</span><span id="displaySeconds">00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 控制按钮 -->
+                <div class="flex items-center gap-6">
+                    <!-- 取消按钮 -->
+                    <button onclick="cancelTimer()" 
+                        class="flex-1 py-4 glass-effect rounded-full text-xl font-medium transition-all duration-200 hover:bg-white/20 btn-press">
+                        取消
+                    </button>
+
+                    <!-- 暂停/继续按钮 -->
+                    <button id="pauseBtn" onclick="pauseTimer()" 
+                        class="flex-1 py-4 bg-iphone-orange rounded-full text-xl font-medium transition-all duration-200 hover:scale-105 btn-press shadow-xl">
+                        暂停
+                    </button>
+                </div>
+
+                <!-- 循环选项 -->
+                <div class="mt-8 flex items-center justify-center gap-3">
+                    <input type="checkbox" id="repeatToggle" class="w-5 h-5 rounded">
+                    <label for="repeatToggle" class="text-iphone-gray">计时结束后重复</label>
+                </div>
+            </div>
+
+            <!-- 完成状态 -->
+            <div id="completedState" class="hidden w-full max-w-md text-center animate-bounce-in">
+                <div class="text-6xl mb-6">⏰</div>
+                <h2 class="text-3xl font-thin mb-4">时间到！</h2>
+                <p class="text-iphone-gray mb-8">计时已完成</p>
+                
+                <div class="space-y-3">
+                    <button onclick="resetTimer()" 
+                        class="w-full py-4 bg-iphone-green rounded-full text-xl font-medium transition-all duration-200 hover:scale-105 btn-press shadow-xl">
+                        重新开始
+                    </button>
+                    <button onclick="newTimer()" 
+                        class="w-full py-4 glass-effect rounded-full text-xl font-medium transition-all duration-200 hover:bg-white/20 btn-press">
+                        新建计时
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 底部标签栏 -->
+        <nav class="fixed bottom-0 left-0 right-0 frosted-bg border-t border-white/10">
+            <div class="flex justify-around items-center py-2">
+                <button onclick="location.href='stopwatch.html'" class="flex flex-col items-center gap-1 p-2 text-iphone-gray transition-colors">
+                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42C16.07 4.74 14.12 4 12 4c-4.97 0-9 4.03-9 9s4.02 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
+                    </svg>
+                    <span class="text-xs">秒表</span>
+                </button>
+                
+                <button class="flex flex-col items-center gap-1 p-2 text-white transition-colors">
+                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+                    </svg>
+                    <span class="text-xs">计时器</span>
+                </button>
+            </div>
+        </nav>
+    </main>
+
+    <script>
+        // 计时器状态
+        let totalSeconds = 0;
+        let remainingSeconds = 0;
+        let timerInterval = null;
+        let isPaused = false;
+        let isCompleted = false;
+        
+        // 当前选中的时间
+        let selectedHours = 0;
+        let selectedMinutes = 0;
+        let selectedSeconds = 0;
+
+        // DOM 元素
+        const timeSetup = document.getElementById('timeSetup');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const completedState = document.getElementById('completedState');
+        const startTimerBtn = document.getElementById('startTimerBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const progressRing = document.getElementById('progressRing');
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            initializePickers();
+            updateCurrentTime();
+            setInterval(updateCurrentTime, 1000);
+            
+            // 检查系统主题
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+                document.body.classList.add('dark');
+            }
+        });
+
+        // 更新当前时间
+        function updateCurrentTime() {
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            document.getElementById('currentTime').textContent = `${hours}:${minutes.toString().padStart(2, '0')}`;
+        }
+
+        // 初始化时间选择器
+        function initializePickers() {
+            const hoursPicker = document.getElementById('hoursPicker');
+            const minutesPicker = document.getElementById('minutesPicker');
+            const secondsPicker = document.getElementById('secondsPicker');
+
+            // 生成小时选项 (0-23)
+            for (let i = 0; i <= 23; i++) {
+                const hourDiv = document.createElement('div');
+                hourDiv.className = 'picker-item text-2xl';
+                hourDiv.textContent = i.toString().padStart(2, '0');
+                hourDiv.dataset.value = i;
+                hourDiv.onclick = () => selectHour(i);
+                hoursPicker.appendChild(hourDiv);
+            }
+
+            // 生成分钟选项 (0-59)
+            for (let i = 0; i <= 59; i++) {
+                const minuteDiv = document.createElement('div');
+                minuteDiv.className = 'picker-item text-2xl';
+                minuteDiv.textContent = i.toString().padStart(2, '0');
+                minuteDiv.dataset.value = i;
+                minuteDiv.onclick = () => selectMinute(i);
+                minutesPicker.appendChild(minuteDiv);
+            }
+
+            // 生成秒选项 (0-59)
+            for (let i = 0; i <= 59; i++) {
+                const secondDiv = document.createElement('div');
+                secondDiv.className = 'picker-item text-2xl';
+                secondDiv.textContent = i.toString().padStart(2, '0');
+                secondDiv.dataset.value = i;
+                secondDiv.onclick = () => selectSecond(i);
+                secondsPicker.appendChild(secondDiv);
+            }
+
+            // 添加触摸滑动支持
+            addTouchSupport(hoursPicker, 'hour');
+            addTouchSupport(minutesPicker, 'minute');
+            addTouchSupport(secondsPicker, 'second');
+
+            // 默认选中0
+            selectHour(0);
+            selectMinute(0);
+            selectSecond(0);
+        }
+
+        // 添加触摸滑动支持
+        function addTouchSupport(element, type) {
+            let startY = 0;
+            let startScrollTop = 0;
+
+            element.addEventListener('touchstart', (e) => {
+                startY = e.touches[0].clientY;
+                startScrollTop = element.scrollTop;
+            }, { passive: true });
+
+            element.addEventListener('touchmove', (e) => {
+                const deltaY = startY - e.touches[0].clientY;
+                element.scrollTop = startScrollTop + deltaY;
+            }, { passive: true });
+
+            element.addEventListener('touchend', () => {
+                setTimeout(() => {
+                    const itemHeight = 64;
+                    const scrollTop = element.scrollTop;
+                    const index = Math.round(scrollTop / itemHeight);
+                    const items = element.querySelectorAll('.picker-item');
+                    if (items[index]) {
+                        const value = parseInt(items[index].dataset.value);
+                        if (type === 'hour') selectHour(value);
+                        else if (type === 'minute') selectMinute(value);
+                        else if (type === 'second') selectSecond(value);
+                    }
+                }, 100);
+            }, { passive: true });
+
+            // 鼠标滚轮支持
+            element.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const delta = e.deltaY > 0 ? 1 : -1;
+                const items = element.querySelectorAll('.picker-item');
+                const selected = element.querySelector('.selected');
+                if (selected) {
+                    const currentIndex = Array.from(items).indexOf(selected);
+                    const newIndex = Math.max(0, Math.min(items.length - 1, currentIndex + delta));
+                    const value = parseInt(items[newIndex].dataset.value);
+                    if (type === 'hour') selectHour(value);
+                    else if (type === 'minute') selectMinute(value);
+                    else if (type === 'second') selectSecond(value);
+                }
+            });
+        }
+
+        // 选择小时
+        function selectHour(hour) {
+            selectedHours = hour;
+            updatePickerSelection('hoursPicker', hour);
+            checkStartButton();
+        }
+
+        // 选择分钟
+        function selectMinute(minute) {
+            selectedMinutes = minute;
+            updatePickerSelection('minutesPicker', minute);
+            checkStartButton();
+        }
+
+        // 选择秒
+        function selectSecond(second) {
+            selectedSeconds = second;
+            updatePickerSelection('secondsPicker', second);
+            checkStartButton();
+        }
+
+        // 更新选择器选中状态
+        function updatePickerSelection(pickerId, value) {
+            const picker = document.getElementById(pickerId);
+            const items = picker.querySelectorAll('.picker-item');
+            
+            items.forEach((item, index) => {
+                const itemValue = parseInt(item.dataset.value);
+                if (itemValue === value) {
+                    item.classList.add('selected');
+                    const itemHeight = 64;
+                    const scrollTop = index * itemHeight;
+                    picker.scrollTop = scrollTop;
+                } else {
+                    item.classList.remove('selected');
+                }
+            });
+        }
+
+        // 检查是否可以开始
+        function checkStartButton() {
+            const total = selectedHours * 3600 + selectedMinutes * 60 + selectedSeconds;
+            startTimerBtn.disabled = total === 0;
+        }
+
+        // 设置预设时间
+        function setPresetTime(hours, minutes, seconds) {
+            selectHour(hours);
+            selectMinute(minutes);
+            selectSecond(seconds);
+        }
+
+        // 开始计时
+        function startTimer() {
+            totalSeconds = selectedHours * 3600 + selectedMinutes * 60 + selectedSeconds;
+            remainingSeconds = totalSeconds;
+
+            if (totalSeconds === 0) return;
+
+            // 切换显示
+            timeSetup.classList.add('hidden');
+            timerDisplay.classList.remove('hidden');
+            completedState.classList.add('hidden');
+
+            // 重置状态
+            isPaused = false;
+            isCompleted = false;
+            document.body.classList.remove('alarm-active');
+
+            // 开始倒计时
+            updateDisplay();
+            timerInterval = setInterval(updateTimer, 100);
+        }
+
+        // 更新计时器
+        function updateTimer() {
+            if (remainingSeconds <= 0) {
+                completeTimer();
+                return;
+            }
+
+            remainingSeconds -= 0.1;
+            updateDisplay();
+        }
+
+        // 更新显示
+        function updateDisplay() {
+            const hours = Math.floor(remainingSeconds / 3600);
+            const minutes = Math.floor((remainingSeconds % 3600) / 60);
+            const seconds = Math.floor(remainingSeconds % 60);
+
+            document.getElementById('displayHours').textContent = hours.toString().padStart(2, '0');
+            document.getElementById('displayMinutes').textContent = minutes.toString().padStart(2, '0');
+            document.getElementById('displaySeconds').textContent = seconds.toString().padStart(2, '0');
+
+            // 更新进度环
+            const progress = (totalSeconds - remainingSeconds) / totalSeconds;
+            const circumference = 2 * Math.PI * 120;
+            const offset = circumference - (progress * circumference);
+            progressRing.style.strokeDashoffset = offset;
+        }
+
+        // 暂停/继续
+        function pauseTimer() {
+            if (isPaused) {
+                // 继续
+                isPaused = false;
+                pauseBtn.textContent = '暂停';
+                pauseBtn.classList.remove('bg-iphone-green');
+                pauseBtn.classList.add('bg-iphone-orange');
+                timerInterval = setInterval(updateTimer, 100);
+            } else {
+                // 暂停
+                isPaused = true;
+                pauseBtn.textContent = '继续';
+                pauseBtn.classList.remove('bg-iphone-orange');
+                pauseBtn.classList.add('bg-iphone-green');
+                clearInterval(timerInterval);
+            }
+        }
+
+        // 取消计时
+        function cancelTimer() {
+            clearInterval(timerInterval);
+            timeSetup.classList.remove('hidden');
+            timerDisplay.classList.add('hidden');
+            completedState.classList.add('hidden');
+            document.body.classList.remove('alarm-active');
+        }
+
+        // 完成计时
+        function completeTimer() {
+            clearInterval(timerInterval);
+            isCompleted = true;
+            
+            // 显示完成状态
+            timerDisplay.classList.add('hidden');
+            completedState.classList.remove('hidden');
+            
+            // 播放提醒音
+            playAlarm();
+            
+            // 添加动画效果
+            document.body.classList.add('alarm-active');
+            
+            // 检查是否重复
+            if (document.getElementById('repeatToggle').checked) {
+                setTimeout(() => {
+                    startTimer();
+                }, 3000);
+            }
+        }
+
+        // 重置计时器
+        function resetTimer() {
+            clearInterval(timerInterval);
+            remainingSeconds = totalSeconds;
+            isPaused = false;
+            isCompleted = false;
+            
+            timerDisplay.classList.remove('hidden');
+            completedState.classList.add('hidden');
+            document.body.classList.remove('alarm-active');
+            
+            updateDisplay();
+            pauseBtn.textContent = '暂停';
+            pauseBtn.classList.remove('bg-iphone-green');
+            pauseBtn.classList.add('bg-iphone-orange');
+            
+            timerInterval = setInterval(updateTimer, 100);
+        }
+
+        // 新建计时
+        function newTimer() {
+            clearInterval(timerInterval);
+            timeSetup.classList.remove('hidden');
+            timerDisplay.classList.add('hidden');
+            completedState.classList.add('hidden');
+            document.body.classList.remove('alarm-active');
+            
+            // 重置选择器
+            selectHour(0);
+            selectMinute(0);
+            selectSecond(0);
+        }
+
+        // 播放提醒音
+        function playAlarm() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            function playBeep(frequency, duration) {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = frequency;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + duration);
+            }
+            
+            // 播放三次提示音
+            playBeep(800, 0.2);
+            setTimeout(() => playBeep(800, 0.2), 300);
+            setTimeout(() => playBeep(800, 0.2), 600);
+            
+            // 触觉反馈
+            if (navigator.vibrate) {
+                navigator.vibrate([200, 100, 200, 100, 200]);
+            }
+        }
+
+        // 键盘快捷键
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && !startTimerBtn.disabled) {
+                e.preventDefault();
+                if (timeSetup.classList.contains('hidden')) {
+                    pauseTimer();
+                } else {
+                    startTimer();
+                }
+            } else if (e.code === 'Escape') {
+                if (!timeSetup.classList.contains('hidden')) {
+                    cancelTimer();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

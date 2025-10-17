@@ -206,7 +206,7 @@
             -webkit-backdrop-filter: blur(40px);
         }
         
-        /* 倒计时圆环 - 增大尺寸 */
+        /* 倒计时圆环 - 自适应版本 */
         .progress-ring {
             transform: rotate(-90deg);
             transform-origin: 50% 50%;
@@ -214,6 +214,18 @@
         
         .progress-ring-circle {
             transition: stroke-dashoffset 0.1s linear;
+        }
+        
+        /* 进度环容器 - 动态尺寸 */
+        .progress-container {
+            position: relative;
+            width: min(80vw, 80vh);
+            height: min(80vw, 80vh);
+            max-width: 384px;
+            max-height: 384px;
+            min-width: 240px;
+            min-height: 240px;
+            margin: 0 auto;
         }
         
         /* 完成动画 */
@@ -291,13 +303,47 @@
             }
         }
         
-        /* 横屏优化 */
-        @media (orientation: landscape) and (max-height: 600px) {
-            .main-content {
-                padding-top: env(safe-area-inset-top, 48px);
-                padding-bottom: env(safe-area-inset-bottom, 48px);
+        /* 横屏优化 - 重点修复 */
+        @media (orientation: landscape) {
+            /* 进度环容器 - 横屏时更保守的尺寸 */
+            .progress-container {
+                width: min(60vw, 70vh);
+                height: min(60vw, 70vh);
+                max-width: 320px;
+                max-height: 320px;
+                min-width: 200px;
+                min-height: 200px;
             }
             
+            /* 横屏时字体缩小 */
+            .timer-display-landscape {
+                font-size: clamp(2rem, 4vw, 3rem);
+            }
+            
+            /* 横屏时主内容区域调整 */
+            .main-content-landscape {
+                padding-top: env(safe-area-inset-top, 48px);
+                padding-bottom: env(safe-area-inset-bottom, 32px);
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+            }
+            
+            /* 横屏时计时器区域调整 */
+            .timer-section-landscape {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 1rem;
+            }
+            
+            /* 横屏时控制按钮调整 */
+            .controls-landscape {
+                margin-top: 1rem;
+            }
+            
+            /* 横屏时选择器高度调整 */
             .picker-container {
                 height: 80px;
             }
@@ -317,6 +363,52 @@
             
             .picker-mask {
                 height: 40px;
+            }
+        }
+        
+        /* 超低高度横屏优化 */
+        @media (orientation: landscape) and (max-height: 400px) {
+            .progress-container {
+                width: min(50vw, 60vh);
+                height: min(50vw, 60vh);
+                max-width: 280px;
+                max-height: 280px;
+                min-width: 180px;
+                min-height: 180px;
+            }
+            
+            .timer-display-landscape {
+                font-size: clamp(1.5rem, 3vw, 2.5rem);
+            }
+            
+            .controls-landscape {
+                margin-top: 0.5rem;
+            }
+            
+            .control-btn {
+                padding: 0.75rem;
+                font-size: 1rem;
+            }
+        }
+        
+        /* 极低高度横屏优化 */
+        @media (orientation: landscape) and (max-height: 320px) {
+            .progress-container {
+                width: min(40vw, 50vh);
+                height: min(40vw, 50vh);
+                max-width: 240px;
+                max-height: 240px;
+                min-width: 160px;
+                min-height: 160px;
+            }
+            
+            .timer-display-landscape {
+                font-size: clamp(1.25rem, 2.5vw, 2rem);
+            }
+            
+            .control-btn {
+                padding: 0.5rem;
+                font-size: 0.875rem;
             }
         }
     </style>
@@ -343,49 +435,49 @@
         </div>
     </div>
 
-    <!-- 主容器 -->
-    <main class="main-content pt-12 sm:pt-12 pb-20 min-h-screen flex flex-col">
+    <!-- 主容器 - 横屏优化 -->
+    <main class="main-content main-content-landscape pt-12 sm:pt-12 pb-20 min-h-screen flex flex-col">
         
         <!-- 标题栏 -->
-        <header class="px-4 sm:px-6 py-3 sm:py-4">
-            <h1 class="text-2xl sm:text-3xl font-thin text-center">计时器</h1>
+        <header class="px-4 sm:px-6 py-2 sm:py-4">
+            <h1 class="text-xl sm:text-2xl lg:text-3xl font-thin text-center">计时器</h1>
         </header>
 
-        <!-- 计时器内容 -->
-        <section class="flex-1 flex flex-col items-center justify-center px-4 sm:px-6">
+        <!-- 计时器内容 - 横屏优化 -->
+        <section class="timer-section timer-section-landscape flex-1 flex flex-col items-center justify-center px-4 sm:px-6">
             
             <!-- 时间设置区域 -->
             <div id="timeSetup" class="w-full max-w-md">
                 <!-- 预设时间按钮 - 移动端优化 -->
-                <div class="grid grid-cols-4 gap-2 sm:gap-3 mb-6 sm:mb-8">
-                    <button onclick="setPresetTime(0, 1, 0)" class="preset-btn glass-effect rounded-xl sm:rounded-2xl py-3 sm:py-4 text-center hover:bg-white/20 transition-all btn-press">
-                        <div class="text-lg sm:text-2xl mb-1">1分</div>
+                <div class="grid grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-6">
+                    <button onclick="setPresetTime(0, 1, 0)" class="preset-btn glass-effect rounded-xl sm:rounded-2xl py-2 sm:py-4 text-center hover:bg-white/20 transition-all btn-press">
+                        <div class="text-sm sm:text-lg sm:text-2xl mb-1">1分</div>
                     </button>
-                    <button onclick="setPresetTime(0, 5, 0)" class="preset-btn glass-effect rounded-xl sm:rounded-2xl py-3 sm:py-4 text-center hover:bg-white/20 transition-all btn-press">
-                        <div class="text-lg sm:text-2xl mb-1">5分</div>
+                    <button onclick="setPresetTime(0, 5, 0)" class="preset-btn glass-effect rounded-xl sm:rounded-2xl py-2 sm:py-4 text-center hover:bg-white/20 transition-all btn-press">
+                        <div class="text-sm sm:text-lg sm:text-2xl mb-1">5分</div>
                     </button>
-                    <button onclick="setPresetTime(0, 10, 0)" class="preset-btn glass-effect rounded-xl sm:rounded-2xl py-3 sm:py-4 text-center hover:bg-white/20 transition-all btn-press">
-                        <div class="text-lg sm:text-2xl mb-1">10分</div>
+                    <button onclick="setPresetTime(0, 10, 0)" class="preset-btn glass-effect rounded-xl sm:rounded-2xl py-2 sm:py-4 text-center hover:bg-white/20 transition-all btn-press">
+                        <div class="text-sm sm:text-lg sm:text-2xl mb-1">10分</div>
                     </button>
-                    <button onclick="setPresetTime(0, 15, 0)" class="preset-btn glass-effect rounded-xl sm:rounded-2xl py-3 sm:py-4 text-center hover:bg-white/20 transition-all btn-press">
-                        <div class="text-lg sm:text-2xl mb-1">15分</div>
+                    <button onclick="setPresetTime(0, 15, 0)" class="preset-btn glass-effect rounded-xl sm:rounded-2xl py-2 sm:py-4 text-center hover:bg-white/20 transition-all btn-press">
+                        <div class="text-sm sm:text-lg sm:text-2xl mb-1">15分</div>
                     </button>
-                    <button onclick="setPresetTime(0, 30, 0)" class="preset-btn glass-effect rounded-xl sm:rounded-2xl py-3 sm:py-4 text-center hover:bg-white/20 transition-all btn-press">
-                        <div class="text-lg sm:text-2xl mb-1">30分</div>
+                    <button onclick="setPresetTime(0, 30, 0)" class="preset-btn glass-effect rounded-xl sm:rounded-2xl py-2 sm:py-4 text-center hover:bg-white/20 transition-all btn-press">
+                        <div class="text-sm sm:text-lg sm:text-2xl mb-1">30分</div>
                     </button>
-                    <button onclick="setPresetTime(0, 45, 0)" class="preset-btn glass-effect rounded-xl sm:rounded-2xl py-3 sm:py-4 text-center hover:bg-white/20 transition-all btn-press">
-                        <div class="text-lg sm:text-2xl mb-1">45分</div>
+                    <button onclick="setPresetTime(0, 45, 0)" class="preset-btn glass-effect rounded-xl sm:rounded-2xl py-2 sm:py-4 text-center hover:bg-white/20 transition-all btn-press">
+                        <div class="text-sm sm:text-lg sm:text-2xl mb-1">45分</div>
                     </button>
-                    <button onclick="setPresetTime(1, 0, 0)" class="preset-btn glass-effect rounded-xl sm:rounded-2xl py-3 sm:py-4 text-center hover:bg-white/20 transition-all btn-press">
-                        <div class="text-lg sm:text-2xl mb-1">1时</div>
+                    <button onclick="setPresetTime(1, 0, 0)" class="preset-btn glass-effect rounded-xl sm:rounded-2xl py-2 sm:py-4 text-center hover:bg-white/20 transition-all btn-press">
+                        <div class="text-sm sm:text-lg sm:text-2xl mb-1">1时</div>
                     </button>
-                    <button onclick="setPresetTime(2, 0, 0)" class="preset-btn glass-effect rounded-xl sm:rounded-2xl py-3 sm:py-4 text-center hover:bg-white/20 transition-all btn-press">
-                        <div class="text-lg sm:text-2xl mb-1">2时</div>
+                    <button onclick="setPresetTime(2, 0, 0)" class="preset-btn glass-effect rounded-xl sm:rounded-2xl py-2 sm:py-4 text-center hover:bg-white/20 transition-all btn-press">
+                        <div class="text-sm sm:text-lg sm:text-2xl mb-1">2时</div>
                     </button>
                 </div>
 
                 <!-- 时间选择器 - 移动端优化 -->
-                <div class="glass-effect rounded-2xl sm:rounded-3xl p-4 sm:p-6 mb-6 sm:mb-8">
+                <div class="glass-effect rounded-2xl sm:rounded-3xl p-3 sm:p-6 mb-4 sm:mb-6">
                     <div class="flex justify-center items-center gap-2 sm:gap-4">
                         <!-- 小时选择 -->
                         <div class="flex flex-col items-center flex-1">
@@ -400,7 +492,7 @@
                             <div class="text-xs sm:text-sm text-iphone-gray mt-2">小时</div>
                         </div>
 
-                        <div class="text-3xl sm:text-4xl font-thin">:</div>
+                        <div class="text-2xl sm:text-3xl lg:text-4xl font-thin">:</div>
 
                         <!-- 分钟选择 -->
                         <div class="flex flex-col items-center flex-1">
@@ -415,7 +507,7 @@
                             <div class="text-xs sm:text-sm text-iphone-gray mt-2">分钟</div>
                         </div>
 
-                        <div class="text-3xl sm:text-4xl font-thin">:</div>
+                        <div class="text-2xl sm:text-3xl lg:text-4xl font-thin">:</div>
 
                         <!-- 秒选择 -->
                         <div class="flex flex-col items-center flex-1">
@@ -434,20 +526,20 @@
 
                 <!-- 开始按钮 - 移动端优化 -->
                 <button id="startTimerBtn" onclick="startTimer()" 
-                    class="control-btn w-full py-4 sm:py-5 bg-iphone-green rounded-full text-xl sm:text-2xl font-medium transition-all duration-200 hover:scale-105 btn-press shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed">
+                    class="control-btn w-full py-3 sm:py-5 bg-iphone-green rounded-full text-lg sm:text-xl lg:text-2xl font-medium transition-all duration-200 hover:scale-105 btn-press shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed">
                     开始
                 </button>
             </div>
 
             <!-- 倒计时显示区域 -->
             <div id="timerDisplay" class="hidden w-full max-w-md">
-                <!-- 进度环 - 增大尺寸 -->
-                <div class="relative mb-8 sm:mb-12">
-                    <svg class="w-72 h-72 sm:w-80 sm:h-80 lg:w-96 lg:h-96 mx-auto">
-                        <circle cx="144" cy="144" r="136" stroke="rgba(255,255,255,0.1)" stroke-width="8" fill="none"/>
-                        <circle id="progressRing" class="progress-ring-circle" cx="144" cy="144" r="136" 
+                <!-- 进度环 - 自适应尺寸 -->
+                <div class="progress-container mb-4 sm:mb-8">
+                    <svg class="w-full h-full" viewBox="0 0 300 300">
+                        <circle cx="150" cy="150" r="140" stroke="rgba(255,255,255,0.1)" stroke-width="8" fill="none"/>
+                        <circle id="progressRing" class="progress-ring-circle" cx="150" cy="150" r="140" 
                             stroke="url(#gradient)" stroke-width="8" fill="none"
-                            stroke-dasharray="854" stroke-dashoffset="854"/>
+                            stroke-dasharray="880" stroke-dashoffset="880"/>
                         <defs>
                             <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
                                 <stop offset="0%" style="stop-color:#34C759;stop-opacity:1" />
@@ -456,49 +548,49 @@
                         </defs>
                     </svg>
                     
-                    <!-- 时间显示 - 移动端优化 -->
+                    <!-- 时间显示 - 横屏自适应 -->
                     <div class="absolute inset-0 flex items-center justify-center">
-                        <div class="timer-display time-picker text-5xl sm:text-6xl lg:text-7xl font-thin text-center">
-                            <span id="displayHours">00</span><span class="inline-block w-3 sm:w-4">:</span><span id="displayMinutes">00</span><span class="inline-block w-3 sm:w-4">:</span><span id="displaySeconds">00</span>
+                        <div class="timer-display timer-display-landscape time-picker text-4xl sm:text-5xl lg:text-6xl font-thin text-center">
+                            <span id="displayHours">00</span><span class="inline-block w-2 sm:w-3 lg:w-4">:</span><span id="displayMinutes">00</span><span class="inline-block w-2 sm:w-3 lg:w-4">:</span><span id="displaySeconds">00</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- 控制按钮 - 移动端优化 -->
-                <div class="flex items-center gap-3 sm:gap-6 mb-6 sm:mb-8">
+                <!-- 控制按钮 - 横屏优化 -->
+                <div class="controls-landscape controls flex items-center gap-2 sm:gap-4 lg:gap-6">
                     <!-- 取消按钮 -->
                     <button onclick="cancelTimer()" 
-                        class="control-btn flex-1 py-3 sm:py-4 glass-effect rounded-full text-lg sm:text-xl font-medium transition-all duration-200 hover:bg-white/20 btn-press">
+                        class="control-btn flex-1 py-2 sm:py-3 lg:py-4 glass-effect rounded-full text-base sm:text-lg lg:text-xl font-medium transition-all duration-200 hover:bg-white/20 btn-press">
                         取消
                     </button>
 
                     <!-- 暂停/继续按钮 -->
                     <button id="pauseBtn" onclick="pauseTimer()" 
-                        class="control-btn flex-1 py-3 sm:py-4 bg-iphone-orange rounded-full text-lg sm:text-xl font-medium transition-all duration-200 hover:scale-105 btn-press shadow-xl">
+                        class="control-btn flex-1 py-2 sm:py-3 lg:py-4 bg-iphone-orange rounded-full text-base sm:text-lg lg:text-xl font-medium transition-all duration-200 hover:scale-105 btn-press shadow-xl">
                         暂停
                     </button>
                 </div>
 
                 <!-- 循环选项 - 移动端优化 -->
-                <div class="flex items-center justify-center gap-3">
-                    <input type="checkbox" id="repeatToggle" class="w-5 h-5 rounded">
-                    <label for="repeatToggle" class="text-sm sm:text-base text-iphone-gray">计时结束后重复</label>
+                <div class="flex items-center justify-center gap-2 sm:gap-3 mt-3 sm:mt-6">
+                    <input type="checkbox" id="repeatToggle" class="w-4 h-4 sm:w-5 sm:h-5 rounded">
+                    <label for="repeatToggle" class="text-xs sm:text-sm text-iphone-gray">计时结束后重复</label>
                 </div>
             </div>
 
             <!-- 完成状态 - 移动端优化 -->
             <div id="completedState" class="hidden w-full max-w-md text-center animate-bounce-in">
-                <div class="text-5xl sm:text-6xl mb-4 sm:mb-6">⏰</div>
-                <h2 class="text-2xl sm:text-3xl font-thin mb-3 sm:mb-4">时间到！</h2>
-                <p class="text-iphone-gray mb-6 sm:mb-8">计时已完成</p>
+                <div class="text-4xl sm:text-5xl lg:text-6xl mb-3 sm:mb-6">⏰</div>
+                <h2 class="text-xl sm:text-2xl lg:text-3xl font-thin mb-2 sm:mb-4">时间到！</h2>
+                <p class="text-iphone-gray mb-4 sm:mb-8">计时已完成</p>
                 
                 <div class="space-y-2 sm:space-y-3">
                     <button onclick="resetTimer()" 
-                        class="control-btn w-full py-3 sm:py-4 bg-iphone-green rounded-full text-lg sm:text-xl font-medium transition-all duration-200 hover:scale-105 btn-press shadow-xl">
+                        class="control-btn w-full py-2 sm:py-3 lg:py-4 bg-iphone-green rounded-full text-base sm:text-lg lg:text-xl font-medium transition-all duration-200 hover:scale-105 btn-press shadow-xl">
                         重新开始
                     </button>
                     <button onclick="newTimer()" 
-                        class="control-btn w-full py-3 sm:py-4 glass-effect rounded-full text-lg sm:text-xl font-medium transition-all duration-200 hover:bg-white/20 btn-press">
+                        class="control-btn w-full py-2 sm:py-3 lg:py-4 glass-effect rounded-full text-base sm:text-lg lg:text-xl font-medium transition-all duration-200 hover:bg-white/20 btn-press">
                         新建计时
                     </button>
                 </div>
@@ -509,14 +601,14 @@
         <nav class="bottom-nav fixed bottom-0 left-0 right-0 frosted-bg border-t border-white/10">
             <div class="flex justify-around items-center py-2">
                 <button onclick="location.href='stopwatch.html'" class="flex flex-col items-center gap-1 p-2 text-iphone-gray transition-colors">
-                    <svg class="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="currentColor">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42C16.07 4.74 14.12 4 12 4c-4.97 0-9 4.03-9 9s4.02 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
                     </svg>
                     <span class="text-xs">秒表</span>
                 </button>
                 
                 <button class="flex flex-col items-center gap-1 p-2 text-white transition-colors">
-                    <svg class="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="currentColor">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
                     </svg>
                     <span class="text-xs">计时器</span>
@@ -566,7 +658,19 @@
                 }
                 lastTouchEnd = now;
             }, false);
+            
+            // 监听屏幕方向变化
+            window.addEventListener('orientationchange', handleOrientationChange);
+            window.addEventListener('resize', handleOrientationChange);
         });
+
+        // 处理屏幕方向变化
+        function handleOrientationChange() {
+            // 重新计算进度环参数
+            setTimeout(() => {
+                updateDisplay();
+            }, 100);
+        }
 
         // 更新当前时间
         function updateCurrentTime() {
@@ -585,7 +689,7 @@
             // 生成小时选项 (0-23)
             for (let i = 0; i <= 23; i++) {
                 const hourDiv = document.createElement('div');
-                hourDiv.className = 'picker-item text-xl sm:text-2xl';
+                hourDiv.className = 'picker-item text-lg sm:text-xl lg:text-2xl';
                 hourDiv.textContent = i.toString().padStart(2, '0');
                 hourDiv.dataset.value = i;
                 hourDiv.onclick = () => selectHour(i);
@@ -595,7 +699,7 @@
             // 生成分钟选项 (0-59)
             for (let i = 0; i <= 59; i++) {
                 const minuteDiv = document.createElement('div');
-                minuteDiv.className = 'picker-item text-xl sm:text-2xl';
+                minuteDiv.className = 'picker-item text-lg sm:text-xl lg:text-2xl';
                 minuteDiv.textContent = i.toString().padStart(2, '0');
                 minuteDiv.dataset.value = i;
                 minuteDiv.onclick = () => selectMinute(i);
@@ -605,7 +709,7 @@
             // 生成秒选项 (0-59)
             for (let i = 0; i <= 59; i++) {
                 const secondDiv = document.createElement('div');
-                secondDiv.className = 'picker-item text-xl sm:text-2xl';
+                secondDiv.className = 'picker-item text-lg sm:text-xl lg:text-2xl';
                 secondDiv.textContent = i.toString().padStart(2, '0');
                 secondDiv.dataset.value = i;
                 secondDiv.onclick = () => selectSecond(i);
@@ -648,7 +752,25 @@
                 if (!isScrolling) return;
                 
                 setTimeout(() => {
-                    const itemHeight = window.innerWidth <= 380 ? 50 : (window.innerWidth <= 640 ? 60 : 60);
+                    const isLandscape = window.innerWidth > window.innerHeight;
+                    const isLowHeight = window.innerHeight <= 400;
+                    const isUltraLowHeight = window.innerHeight <= 320;
+                    
+                    let itemHeight;
+                    if (isUltraLowHeight) {
+                        itemHeight = 40;
+                    } else if (isLowHeight) {
+                        itemHeight = 40;
+                    } else if (isLandscape) {
+                        itemHeight = 40;
+                    } else if (window.innerWidth <= 380) {
+                        itemHeight = 50;
+                    } else if (window.innerWidth <= 640) {
+                        itemHeight = 60;
+                    } else {
+                        itemHeight = 60;
+                    }
+                    
                     const scrollTop = element.scrollTop;
                     const index = Math.round(scrollTop / itemHeight);
                     const items = element.querySelectorAll('.picker-item');
@@ -708,8 +830,27 @@
                 const itemValue = parseInt(item.dataset.value);
                 if (itemValue === value) {
                     item.classList.add('selected');
-                    // 移动端优化：根据屏幕尺寸调整
-                    const itemHeight = window.innerWidth <= 380 ? 50 : (window.innerWidth <= 640 ? 60 : 60);
+                    
+                    // 根据屏幕方向和尺寸动态调整
+                    const isLandscape = window.innerWidth > window.innerHeight;
+                    const isLowHeight = window.innerHeight <= 400;
+                    const isUltraLowHeight = window.innerHeight <= 320;
+                    
+                    let itemHeight;
+                    if (isUltraLowHeight) {
+                        itemHeight = 40;
+                    } else if (isLowHeight) {
+                        itemHeight = 40;
+                    } else if (isLandscape) {
+                        itemHeight = 40;
+                    } else if (window.innerWidth <= 380) {
+                        itemHeight = 50;
+                    } else if (window.innerWidth <= 640) {
+                        itemHeight = 60;
+                    } else {
+                        itemHeight = 60;
+                    }
+                    
                     const scrollTop = index * itemHeight;
                     picker.scrollTop = scrollTop;
                 } else {
@@ -764,7 +905,7 @@
             updateDisplay();
         }
 
-        // 更新显示 - 移动端优化
+        // 更新显示 - 横屏自适应优化
         function updateDisplay() {
             const hours = Math.floor(remainingSeconds / 3600);
             const minutes = Math.floor((remainingSeconds % 3600) / 60);
@@ -774,9 +915,9 @@
             document.getElementById('displayMinutes').textContent = minutes.toString().padStart(2, '0');
             document.getElementById('displaySeconds').textContent = seconds.toString().padStart(2, '0');
 
-            // 更新进度环 - 根据屏幕尺寸调整
+            // 更新进度环 - 使用固定半径140（基于viewBox）
             const progress = (totalSeconds - remainingSeconds) / totalSeconds;
-            const radius = window.innerWidth <= 640 ? 136 : 136;
+            const radius = 140;
             const circumference = 2 * Math.PI * radius;
             const offset = circumference - (progress * circumference);
             progressRing.style.strokeDashoffset = offset;
